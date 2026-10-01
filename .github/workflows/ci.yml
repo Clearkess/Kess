@@ -33,9 +33,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
-          cache: npm
-      - name: Install (locked)
-        run: npm ci
+      - name: Install
+        run: npm install
       - name: Syntax check
         run: npm run check
       - name: End-to-end suite
