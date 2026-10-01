@@ -1,0 +1,10 @@
+{
+  "name": "opay-flash-simulator-vercel",
+  "version": "2.1.0",
+  "private": true,
+  "description": "Simulated Nigerian wallet transfers with real Paystack account-name verification. No real money moves.",
+  "license": "MIT",
+  "engines": {"node": ">=22"},
+  "scripts": {"start": "node backend/server.js","dev": "node --watch backend/server.js","test": "node verify.e2e.js","check": "node --check backend/app.js && node --check backend/db.js && node --check backend/server.js"},
+  "dependencies": {"@vercel/node": "latest","bcryptjs": "^2.4.3","cors": "^2.8.6","dotenv": "^16.6.1","express": "^4.22.3","jsonwebtoken": "^9.0.3","pg": "^8.23.1"}
+}
