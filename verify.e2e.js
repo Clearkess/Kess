@@ -4,7 +4,7 @@ if (!DB_URL) {
   process.exit(3);
 }
 let dbName = '';
-try { dbName = new URL(DB_URL).pathname.replace(/^\\//, ''); } catch (_) {
+try { dbName = new URL(DB_URL).pathname.replace(/^\//, ''); } catch (_) {
   console.error('TEST_DATABASE_URL is not a valid URL.');
   process.exit(3);
 }
