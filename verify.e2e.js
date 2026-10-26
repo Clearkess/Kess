@@ -71,6 +71,10 @@ const log = (name, ok, detail) => R.push(`${ok ? 'PASS' : 'FAIL'}  ${name}  ${de
   const c1 = await req('/api/transfers/simulated', { method: 'POST', headers: { ...H, 'Idempotency-Key': key }, body });
   const c2 = await req('/api/transfers/simulated', { method: 'POST', headers: { ...H, 'Idempotency-Key': key }, body });
   log('idempotency replay', c1.d.transaction.reference === c2.d.transaction.reference && c2.d.replayed === true, 'same reference');
+  const changed = await req('/api/transfers/simulated', { method: 'POST', headers: { ...H, 'Idempotency-Key': key }, body: JSON.stringify({ ...base, amount: 25 }) });
+  log('idempotency key rejects changed amount', changed.s === 409 && /different transfer/i.test(changed.d.error), `HTTP ${changed.s}`);
+  const afterReplay = await req('/api/wallet', { headers: H });
+  log('idempotent replay does not debit twice', afterReplay.d.wallet.balance === 650, `balance=${afterReplay.d.wallet.balance}`);
   x = await req('/api/notifications', { headers: H }); log('notifications', x.s === 200 && Array.isArray(x.d.notifications), `count=${x.d.notifications?.length}`);
   const entry = require('./api/index.js'); log('api/index.js exports Express app', typeof entry === 'function', typeof entry);
   console.log(R.join('\n')); const fails = R.filter((r) => r.startsWith('FAIL')); console.log(`PASS ${R.length - fails.length} FAIL ${fails.length}`); server.close(); await getPool().end(); process.exit(fails.length ? 1 : 0);
