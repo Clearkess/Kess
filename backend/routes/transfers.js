@@ -13,7 +13,7 @@ r.post('/simulated', auth, async (req, res, next) => {
     const idemKey = (req.get('Idempotency-Key') || '').trim().slice(0, 128) || null; const pool = getPool();
     if (idemKey) { const prior = await pool.query('SELECT ' + TX_COLUMNS + ' FROM transactions WHERE user_id=$1 AND idempotency_key=$2', [req.user.id, idemKey]); if (prior.rows[0]) return res.json({ success: true, simulated: true, replayed: true, transaction: prior.rows[0] }); }
     if (!bankCode || !/^[0-9]{10}$/.test(accountNumber || '') || !accountName) return res.status(400).json({ success: false, error: 'Complete valid transfer details are required' });
-    if (!Number.isFinite(amount) || amount < 1 || amount > MAX_TRANSFER return res.status(400).json({ success: false, error: `Amount must be between ₦1 and ₦${MAX_TRANSFER.toLocaleString('en-NG')}` });
+    if (!Number.isFinite(amount) || amount < 1 || amount > MAX_TRANSFER) return res.status(400).json({ success: false, error: `Amount must be between ₦1 and ₦${MAX_TRANSFER.toLocaleString('en-NG')}` });
     let bank; try { bank = await findBank(bankCode); } catch (e) { console.error('[transfers:banks]', e.message); return res.status(/not configured/i.test(e.message) ? 503 : 502).json({ success: false, error: 'Bank list unavailable, cannot validate bank code' }); }
     if (!bank) return res.status(400).json({ success: false, error: 'Unknown or inactive bank code' });
     let resolved; try { resolved = await resolveAccount(accountNumber, bankCode); } catch (e) { console.error('[transfers:resolve]', e.message); return res.status(502).json({ success: false, error: 'Account could not be verified with the bank' }); }
