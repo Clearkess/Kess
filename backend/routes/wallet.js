@@ -9,7 +9,7 @@ r.get('/', auth, async (req, res, next) => { try { await initDb(); const { rows 
 r.post('/fund-simulated', auth, async (req, res, next) => {
   try {
     await initDb(); const amount = Number(req.body && req.body.amount);
-    if (!Number.isFinite(amount) || amount <= 0 || amount > MAX_SINGLE_FUNDING) return res.status(400).json({ success: false, error: `Funding amount must be between ₦1 and ₦${MAX_SINGLE_FUNDING.toLocaleString('en-NG')}` });
+    if (!Number.isFinite(amount) || amount < 1 || amount > MAX_SINGLE_FUNDING) return res.status(400).json({ success: false, error: `Funding amount must be between ₦1 and ₦${MAX_SINGLE_FUNDING.toLocaleString('en-NG')}` });
     const kobo = Math.round(amount * 100), client = await getPool().connect();
     try {
       await client.query('BEGIN');
