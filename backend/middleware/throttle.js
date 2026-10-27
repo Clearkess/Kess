@@ -34,8 +34,10 @@ function limiter({ limit, windowMs, key }) {
       }
       return next();
     } catch (e) {
-      console.error('[throttle]', e.message);
-      return next();
+      // Fail closed: if the shared limiter cannot be checked, do not allow
+      // login or registration attempts to bypass the configured rate limit.
+      console.error('[throttle] rate-limit storage unavailable:', e.message);
+      return res.status(503).json({ success: false, error: 'Authentication is temporarily unavailable. Please try again shortly.' });
     }
   };
 }

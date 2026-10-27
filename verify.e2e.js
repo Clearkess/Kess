@@ -1,7 +1,21 @@
-const DB_URL = process.env.TEST_DATABASE_URL || 'postgresql://postgres:pass@127.0.0.1:5432/flash_simulator_test';
+const DB_URL = process.env.TEST_DATABASE_URL;
+if (!DB_URL) {
+  console.error('REFUSING TO RUN: set TEST_DATABASE_URL to a dedicated disposable PostgreSQL test database.');
+  process.exit(3);
+}
 let dbName = '';
-try { dbName = new URL(DB_URL).pathname.replace(/^\//, ''); } catch (_) { console.error(`TEST_DATABASE_URL is not a valid URL: ${DB_URL}`); process.exit(3); }
-if (!/test|ci|sim/i.test(dbName) && process.env.ALLOW_DESTRUCTIVE_TEST !== '1') { console.error(`REFUSING TO RUN: database "${dbName}" does not look like a test database.`); process.exit(3); }
+try { dbName = new URL(DB_URL).pathname.replace(/^\//, ''); } catch (_) {
+  console.error('TEST_DATABASE_URL is not a valid URL.');
+  process.exit(3);
+}
+if (!/test|ci/i.test(dbName)) {
+  console.error('REFUSING TO RUN: database name must contain "test" or "ci".');
+  process.exit(3);
+}
+if (process.env.ALLOW_DESTRUCTIVE_TEST !== '1') {
+  console.error('REFUSING TO RUN: this test drops database tables. Set ALLOW_DESTRUCTIVE_TEST=1 only for a disposable test database.');
+  process.exit(3);
+}
 process.env.DATABASE_URL = DB_URL;
 process.env.JWT_SECRET = process.env.JWT_SECRET || 'verification_secret_key_only';
 process.env.PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY || 'sk_test_stub';
@@ -57,6 +71,10 @@ const log = (name, ok, detail) => R.push(`${ok ? 'PASS' : 'FAIL'}  ${name}  ${de
   const c1 = await req('/api/transfers/simulated', { method: 'POST', headers: { ...H, 'Idempotency-Key': key }, body });
   const c2 = await req('/api/transfers/simulated', { method: 'POST', headers: { ...H, 'Idempotency-Key': key }, body });
   log('idempotency replay', c1.d.transaction.reference === c2.d.transaction.reference && c2.d.replayed === true, 'same reference');
+  const changed = await req('/api/transfers/simulated', { method: 'POST', headers: { ...H, 'Idempotency-Key': key }, body: JSON.stringify({ ...base, amount: 25 }) });
+  log('idempotency key rejects changed amount', changed.s === 409 && /different transfer/i.test(changed.d.error), `HTTP ${changed.s}`);
+  const afterReplay = await req('/api/wallet', { headers: H });
+  log('idempotent replay does not debit twice', afterReplay.d.wallet.balance === 650, `balance=${afterReplay.d.wallet.balance}`);
   x = await req('/api/notifications', { headers: H }); log('notifications', x.s === 200 && Array.isArray(x.d.notifications), `count=${x.d.notifications?.length}`);
   const entry = require('./api/index.js'); log('api/index.js exports Express app', typeof entry === 'function', typeof entry);
   console.log(R.join('\n')); const fails = R.filter((r) => r.startsWith('FAIL')); console.log(`PASS ${R.length - fails.length} FAIL ${fails.length}`); server.close(); await getPool().end(); process.exit(fails.length ? 1 : 0);
