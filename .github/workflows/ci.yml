@@ -28,6 +28,8 @@ jobs:
       JWT_SECRET: ci_jwt_secret_not_for_production
       PAYSTACK_SECRET_KEY: sk_test_ci_placeholder
       NODE_ENV: test
+      # Safe only because this workflow creates a fresh disposable PostgreSQL service.
+      ALLOW_DESTRUCTIVE_TEST: '1'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
